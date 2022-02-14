@@ -1,0 +1,3 @@
+conda create --name flye_assembler
+conda install -c bioconda flye
+flye --nano-raw ../fastq_pass/*.fastq --scaffold --out-dir tmp --threads 20
