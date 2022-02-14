@@ -1,0 +1,2 @@
+rsync -vr /data/SBCS-Promethion/Ephemera/fastq_pass .
+Thu 10 Feb 00:26:31 GMT 2022
