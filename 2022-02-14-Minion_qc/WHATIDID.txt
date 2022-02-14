@@ -1,0 +1,14 @@
+wget https://raw.githubusercontent.com/roblanf/minion_qc/master/MinIONQC.R -O MinIONQC.R
+module load R
+R
+install.packages(c("data.table", 
+                   "futile.logger",
+                   "ggplot2",
+                   "optparse",
+                   "plyr",
+                   "readr",
+                   "reshape2",
+                   "scales",
+                   "viridis",
+                   "yaml"))
+
