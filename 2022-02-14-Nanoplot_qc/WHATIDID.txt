@@ -1,3 +1,5 @@
 module load anacondo3/
 conda create --name nanoplot
 conda activate nanoplot
+conda install -c bioconda nanoplot
+NanoPlot --summary ../fastq_pass/sequencing_summary_PAI48885_f4947b5d.txt --loglength -t 8 -o tmp
