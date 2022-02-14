@@ -12,3 +12,4 @@ install.packages(c("data.table",
                    "viridis",
                    "yaml"))
 
+Rscript MinIONQC.R -i ../fastq_pass/sequencing_summary_PAI48885_f4947b5d.txt -o tmp -p 4
