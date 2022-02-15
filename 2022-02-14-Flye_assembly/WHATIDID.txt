@@ -11,3 +11,6 @@ flye --nano-raw input/ephemera_concatenated.fastq --scaffold --out-dir tmp --thr
 
 module load quast/
 quast.py  -o tmp_quast tmp/assembly.fasta
+
+
+conda create -n busco_5 -c conda-forge -c bioconda busco=5.2.2
