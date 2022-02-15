@@ -2,3 +2,12 @@ conda create --name flye_assembler
 conda install -c bioconda flye
 flye --nano-raw ../fastq_pass/*.fastq --scaffold --out-dir tmp --threads 20
 ERROR: [Errno 7] Argument list too long: 'flye-modules'
+This error is caused by the high number of fastq files. To solve it I need to concatenated them all into a single one.
+
+I concatenated in my scratch like this:
+cat /data/home/btx645/archive_hive/ghernandez/2022-02-Ephemera_nanopore/fastq_pass/*.fastq > ephemera_concatenated.fastq
+ln -s /data/home/btx645/scratch/ephemera_concatenated.fastq input/.
+flye --nano-raw input/ephemera_concatenated.fastq --scaffold --out-dir tmp --threads 20
+
+module load quast/
+quast.py  -o tmp_quast tmp/assembly.fasta
