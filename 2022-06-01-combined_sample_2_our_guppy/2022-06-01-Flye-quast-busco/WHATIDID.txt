@@ -1,0 +1,1 @@
+flye --nano-hq input/2022-06-01-concatenated_all.fastq --scaffold --genome-size 474m --out-dir tmp --threads 20
