@@ -1,0 +1,19 @@
+# BUSCO version is: 5.2.2 
+# The lineage dataset is: insecta_odb10 (Creation date: 2020-09-10, number of genomes: 75, number of BUSCOs: 1367)
+# Summarized benchmarking in BUSCO notation for file /data/scratch/btx645/2022-06-01-combined_sample_2_our_guppy/2022-06-01-Flye-quast-busco/tmp/assembly.fasta
+# BUSCO was run in mode: genome
+# Gene predictor used: metaeuk
+
+	***** Results: *****
+
+	C:82.7%[S:74.7%,D:8.0%],F:9.9%,M:7.4%,n:1367	   
+	1131	Complete BUSCOs (C)			   
+	1021	Complete and single-copy BUSCOs (S)	   
+	110	Complete and duplicated BUSCOs (D)	   
+	135	Fragmented BUSCOs (F)			   
+	101	Missing BUSCOs (M)			   
+	1367	Total BUSCO groups searched		   
+
+Dependencies and versions:
+	hmmsearch: 3.1
+	metaeuk: 5.34c21f2
