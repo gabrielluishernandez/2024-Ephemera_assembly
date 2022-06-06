@@ -1,0 +1,23 @@
+ONT Guppy basecalling software version 5.0.16+b9fcd7b5b
+config file:        /opt/ont/guppy/data/dna_r9.5_450bps.cfg
+model file:         /opt/ont/guppy/data/template_r9.5_450bps_5mer_raw.jsn
+input path:         input/2022-05-30-Combine-pass-and-fail
+save path:          tmp/
+chunk size:         1000
+chunks per runner:  160
+minimum qscore:     7
+records per file:   4000
+num basecallers:    4
+gpu device:         auto
+kernel path:        
+runners per device: 8
+Found 5888 fast5 files to process.
+Init time: 5082 ms
+
+0%   10   20   30   40   50   60   70   80   90   100%
+|----|----|----|----|----|----|----|----|----|----|
+***************************************************
+Caller time: 20215999 ms, Samples called: 699228196970, samples/s: 3.45879e+07
+There were fast5 file loading problems! Failed to load 1 out of 5888 fast5 files. Check log file for details.
+Finishing up any open output files.
+Basecalling completed successfully.
