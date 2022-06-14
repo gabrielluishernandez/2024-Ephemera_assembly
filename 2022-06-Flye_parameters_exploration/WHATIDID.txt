@@ -1,0 +1,26 @@
+# Craete different assemblies with a combination fo samples and parameters:
+# There is BUSCO and QUAST inside each of these main direcories:
+
+# 2022-06-sample_2_fixed_genome_size 
+# All of sample 2 with fix genome size [done]
+flye --nano-hq input/Sample_2.fastq --scaffold --genome-size 474m --out-dir tmp --threads 20
+
+# 2022-06-XX-sample_2_no_fixed_genome_size
+# All sample 2 without fix genome size 
+flye --nano-hq input/Sample_2.fastq --scaffold --out-dir tmp --threads 20
+
+# 2022-06-XX-Sample_2_read_length_Z
+# (All of Sample 2) plus (sample 1 bigger than Z)
+
+
+# 2022-06-XX-Sample_1_and_sample_2
+# All of sample 1 + sample 2 (probalby no fixed genome size
+
+
+
+# 2022-06-XX-Sampe_1_and_sample_2_read_length_X 
+# (Sample 1 +sample 2) but only bigger than X 
+ 
+
+#2022-06-XX-Sample_2_read_length_Y
+# (All of Sample 2) plus (sample 1 bigger than Y)
