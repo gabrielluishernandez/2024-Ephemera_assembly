@@ -1,2 +1,6 @@
 grep -v "^#" tmp_busco/run_insecta_odb10/missing_busco_list.tsv > missing_buscos
 wget 'http://www.orthodb.org/fasta?id=101448at50557&species=7460_0' -O data2.fs
+
+parallel -j 5 "wget 'http://www.orthodb.org/fasta?id={}&species=7460_0' -O tmp/{}.fasta" :::: input/missing_buscos
+cat tmp/*.fasta | grep -A 1 "Apis" > tmp/Apis_only.fasta
+cat tmp/*.fasta | grep -A 1 "Tribolium" > tmp/Tribolium_only.fasta
