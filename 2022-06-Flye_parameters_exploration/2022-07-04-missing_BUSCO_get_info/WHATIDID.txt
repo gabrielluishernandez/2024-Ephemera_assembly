@@ -9,3 +9,6 @@ cat tmp/*.fasta | grep -A 1 "Apis" > tmp/Apis_only.fasta
 cat tmp/*.fasta | grep -A 1 "Tribolium" > tmp/Tribolium_only.fasta
 
 ## Create a BLAST db and then us Apis or Tribolium as query
+makeblastdb -in input/sample2_1kb.fasta -dbtype "nucl" -out tmp/reference_blastdb
+tblastn -db tmp/reference_blastdb -max_target_seqs 1 -max_hsps 1 -query tmp/Tribolium_only.fasta -outfmt 7 > results/blasted_Tribolium.tsv
+tblastn -db tmp/reference_blastdb -max_target_seqs 1 -max_hsps 1 -query tmp/Apis_only.fasta -outfmt 7 > results/blasted_apis.tsv
