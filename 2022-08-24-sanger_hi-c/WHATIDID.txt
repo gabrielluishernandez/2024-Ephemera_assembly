@@ -1,4 +1,6 @@
 ### Get fasta from sanger
+wget https://darwin.cog.sanger.ac.uk/insects/Ephemera_danica/genomic_data/ieEphDani1/hic-arima2/35219_7%231.cram
+
 samtools fastq -@ 10 -1 out_1.fq.gz -2 out_2.fq.gz sanger.cram
 
 # YAHS
@@ -25,9 +27,10 @@ cd yahs
 
 ### JUICER
 (./juicer pre 2022_08_30_first_run.bin 2022_08_30_first_run_scaffolds_final.agp ../input/assembly.fasta.gz.fai | sort -k2,2d -k6,6d -T ./ --parallel=8 -S32G | awk 'NF' > alignments_sorted.txt.part) && (mv alignments_sorted.txt.part alignments_sorted.txt)
-cut -f 1,2 assembly.fasta.gz.fai > ../Contact_maps_visualization/scaffolds_final.chrom.sizes
 
 ### HIC2COOL	
+
+#####################################################################
 
 ### Filter BAM
 # As the bam file appers to be reporting non-mapped regions, I have filtered. The big file is too noizy and the 
@@ -43,8 +46,16 @@ samtools view --bam --exclude-flags 4 ../tmp/combined_filtered_added_group.bam >
 samtools view tmp/2022_09_23_mapped.bam | cut -f 5 > tmp/vector_qualities_2022_10_10.txt
 samtools depth -a tmp/2022_09_23_mapped.bam > tmp/2022_09_23_depth_samtools
 
-#Run Yahs again with mapquality fileter of 20
-./yahs/yahs -q 20 input/assembly.fasta.gz tmp/2022_09_23_mapped.bam -o tmp_yahs/2022-10-11-filtered_mapq_bam 
+#Run Yahs again with mapquality fileter of 50
+./yahs/yahs -q 50 input/assembly.fasta.gz tmp/2022_09_23_mapped.bam -o tmp_yahs/2022-10-11-filtered_mapq_bam 
 
+### Juicer / Juicer_tools
 #Create input file for Juicer
-(yahs/juicer pre tmp_yahs/2022-10-11-filtered_mapq_bam.bin tmp_yahs/2022-10-11-filtered_mapq_bam_scaffolds_final.agp input/assembly.fasta.gz.fai | sort -k2,2d -k6,6d -T ./ --parallel=8 -S32G | awk 'NF' > alignments_sorted.txt.part) && (mv alignments_sorted.txt.part tmp_yahs/2022-10-11-alignments_sorted.txt)
+(yahs/juicer pre tmp_yahs/2022-10-11-filtered_mapq_bam.bin tmp_yahs/2022-10-11-filtered_mapq_bam_scaffolds_final.agp input/assembly.fasta.gz.fai | sort -k2,2d -k6,6d -T ./ --parallel=8 -S32G | awk 'NF' > alignments_sorted.txt.part) && (mv alignments_sorted.txt.part tmp_yahs/2022-10-12-alignments_sorted.txt)
+
+#Create scaffolds coordinates 
+cut -f 1,2 input/assembly.fasta.gz.fai > tmp_yahs/2022-10-17-scaffolds_final.chrom.sizes
+
+#Dowload juicer_tools from https://github.com/aidenlab/juicer/wiki/Download
+#Create contact map:
+(java -jar -Xmx32G juicer_tools_1.22.01.jar pre tmp_yahs/2022-10-12-alignments_sorted.txt out.hic.part tmp_yahs/2022-10-17-scaffolds_final.chrom.sizes) && (mv out.hic.part results/2022-10-17-HiC-contact-matrix.hic)
