@@ -59,3 +59,67 @@ cut -f 1,2 input/assembly.fasta.gz.fai > tmp_yahs/2022-10-17-scaffolds_final.chr
 #Dowload juicer_tools from https://github.com/aidenlab/juicer/wiki/Download
 #Create contact map:
 (java -jar -Xmx32G juicer_tools_1.22.01.jar pre tmp_yahs/2022-10-12-alignments_sorted.txt out.hic.part tmp_yahs/2022-10-17-scaffolds_final.chrom.sizes) && (mv out.hic.part results/2022-10-17-HiC-contact-matrix.hic)
+
+
+########################################### Re-do. Fileter the genome by scaffold size.
+wget https://darwin.cog.sanger.ac.uk/insects/Ephemera_danica/genomic_data/ieEphDani1/hic-arima2/35219_7%231.cram
+
+samtools fastq -@ 10 -1 out_1.fq.gz -2 out_2.fq.gz sanger.cram
+
+cp ~/archive_hive/ghernandez/2022-02-Ephemera_nanopore/2022-06-Flye_parameters_exploration/2022-06-sample_2_no_fixed_genome_size_read_over_1kb/results/assembly.fasta.gz .
+seqtk seq -L 50000 assembly.fasta.gz > min50000.fa
+bwa index -a bwtsw -p reference min50000.fa
+mv min50000.fa reference
+
+bwa mem -t 8 assembly.fasta.gz out_1.fq.gz | samtools view -@ 8 -Sb -> ../tmp/2022-10-mapped_reads_1.bam
+bwa mem -t 8 assembly.fasta.gz out_2.fq.gz | samtools view -@ 8 -Sb -> ../tmp/2022-10-mapped_reads_2.bam
+
+samtools view -h tmp/2022-10-mapped_reads_1.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-10-25-filtered_mapped_reads_1.bam
+samtools view -h tmp/2022-10-mapped_reads_2.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-10-25-filtered_mapped_reads_2.bam
+bwa mem -t 8 reference out_1.fq.gz | samtools view -@ 8 -Sb -> ../tmp/2022-10-mapped_reads_1.bam
+bwa mem -t 8 reference out_1.fq.gz | samtools view -@ 8 -Sb -> ../tmp/2022-11-mapped_reads_1.bam
+samtools view -h tmp/2022-10-mapped_reads_2.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-10-31-filtered_mapped_reads_2.bam
+samtools view -h tmp/2022-11-mapped_reads_1.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-11-01-filtered_mapped_reads_1.bam
+samtools faidx reference
+perl mapping_pipeline/two_read_bam_combiner.pl tmp/2022-11-01-filtered_mapped_reads_1.bam tmp/2022-10-31-filtered_mapped_reads_2.bam samtools 10 | samtools view -bS -t input/reference.fai - | samtools sort -@ 8 -o tmp/combined_filtered.bam -
+
+java -Xmx4G -Djava.io.tmpdir=temp/ -jar picard.jar AddOrReplaceReadGroups INPUT=tmp/combined_filtered.bam OUTPUT=tmp/2022-11-combined_filtered_added_group.bam ID=sanger1 LB=sanger1 SM=ephemera PL=ILLUMINA PU=none
+
+./yahs/yahs input/reference tmp/2022-11-combined_filtered_added_group.bam -o tmp/2022_11_02_ref_more_than_50k
+
+pre tmp/2022_11_02_ref_more_than_50k.bin tmp/2022_11_02_ref_more_than_50k_scaffolds_final.agp input/reference.fai | sort -k2,2d -k6,6d -T ./ --parallel=8 -S32G | awk 'NF' > alignments_sorted.txt.part) && (mv alignments_sorted.txt.part tmp/2022-11-02-alignments_sorted.txt)
+
+cut -f 1,2 input/reference.fai > tmp/2022-11-04-scaffold.chrom.sizes
+
+(java -jar -Xmx32G juicer_tools_1.22.01.jar pre tmp/2022-11-02-alignments_sorted.txt out.hic.part tmp/2022-11-04-scaffold.chrom.sizes) && (mv out.hic.part results/2022-11-04-HiC-contact-50k.hic)
+
+
+######## Select the 10 longest contigs#################
+# Get genome ready inside input.
+seqtk seq -L 750000 assembly.fasta.gz > min750k.fa
+samtools faidx min.fa
+bwa index -a bwtsw -p reference min750k.fa
+mv min750k.fa reference
+
+# Do read mapping following Aritma pipeline
+bwa mem -t 8 reference out_1.fq.gz | samtools view -@ 8 -Sb -> ../tmp/2022-11-08-mapped_reads_1.bam
+bwa mem -t 8 reference out_2.fq.gz | samtools view -@ 8 -Sb -> ../tmp/2022-11-08-mapped_reads_2.bam
+#Filter aligments
+samtools view -h tmp/2022-11-08-mapped_reads_1.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-11-09-filtered_mapped_reads_1.bam
+samtools view -h tmp/2022-11-08-mapped_reads_2.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-11-09-filtered_mapped_reads_2.bam
+
+#Combine mapped reads
+perl mapping_pipeline/two_read_bam_combiner.pl tmp/2022-11-09-filtered_mapped_reads_1.bam tmp/2022-11-09-filtered_mapped_reads_2.bam samtools 10 | samtools view -bS -t input/reference.fai - | samtools sort -@ 8 -o tmp/2022-11-09combined_filtered.bam -
+
+java -Xmx4G -Djava.io.tmpdir=temp/ -jar picard.jar AddOrReplaceReadGroups INPUT=tmp/2022-11-09combined_filtered.bam OUTPUT=tmp/2022-11-09-combined_filtered_added_group.bam ID=sanger1 LB=sanger1 SM=ephemera PL=ILLUMINA PU=none
+
+./yahs/yahs input/reference tmp/2022-11-09-combined_filtered_added_group.bam -o tmp/2022_11_09-ref-10-contigs
+
+(yahs/juicer pre tmp/2022_11_09-ref-10-contigs.bin tmp/2022_11_09-ref-10-contigs_scaffolds_final.agp input/reference.fai | sort -k2,2d -k6,6d -T ./ --parallel=8 -S32G | awk 'NF' > alignments_sorted.txt.part) && (mv alignments_sorted.txt.part tmp/2022-11-09-alignments_sorted_10_contigs.txt)
+cut -f 1,2 input/reference.fai > tmp_yahs/2022-11-09-scaffolds_final.chrom.sizes
+(java -jar -Xmx32G juicer_tools_1.22.01.jar pre tmp/2022-11-09-alignments_sorted_10_contigs.txt out.hic.part tmp/2022-11-04-scaffold.chrom.sizes) && (mv out.hic.part results/2022-11-09-HiC-contact-matrix-10-contigs.hic)
+
+
+## Do it again without the bam filtering step.
+
+this is a test
