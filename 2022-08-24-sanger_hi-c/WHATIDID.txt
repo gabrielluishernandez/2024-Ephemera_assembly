@@ -76,11 +76,15 @@ bwa mem -t 8 assembly.fasta.gz out_2.fq.gz | samtools view -@ 8 -Sb -> ../tmp/20
 
 samtools view -h tmp/2022-10-mapped_reads_1.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-10-25-filtered_mapped_reads_1.bam
 samtools view -h tmp/2022-10-mapped_reads_2.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-10-25-filtered_mapped_reads_2.bam
+
 bwa mem -t 8 reference out_1.fq.gz | samtools view -@ 8 -Sb -> ../tmp/2022-10-mapped_reads_1.bam
 bwa mem -t 8 reference out_1.fq.gz | samtools view -@ 8 -Sb -> ../tmp/2022-11-mapped_reads_1.bam
+
 samtools view -h tmp/2022-10-mapped_reads_2.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-10-31-filtered_mapped_reads_2.bam
+
 samtools view -h tmp/2022-11-mapped_reads_1.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-11-01-filtered_mapped_reads_1.bam
 samtools faidx reference
+
 perl mapping_pipeline/two_read_bam_combiner.pl tmp/2022-11-01-filtered_mapped_reads_1.bam tmp/2022-10-31-filtered_mapped_reads_2.bam samtools 10 | samtools view -bS -t input/reference.fai - | samtools sort -@ 8 -o tmp/combined_filtered.bam -
 
 java -Xmx4G -Djava.io.tmpdir=temp/ -jar picard.jar AddOrReplaceReadGroups INPUT=tmp/combined_filtered.bam OUTPUT=tmp/2022-11-combined_filtered_added_group.bam ID=sanger1 LB=sanger1 SM=ephemera PL=ILLUMINA PU=none
@@ -104,6 +108,7 @@ mv min750k.fa reference
 # Do read mapping following Aritma pipeline
 bwa mem -t 8 reference out_1.fq.gz | samtools view -@ 8 -Sb -> ../tmp/2022-11-08-mapped_reads_1.bam
 bwa mem -t 8 reference out_2.fq.gz | samtools view -@ 8 -Sb -> ../tmp/2022-11-08-mapped_reads_2.bam
+
 #Filter aligments
 samtools view -h tmp/2022-11-08-mapped_reads_1.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-11-09-filtered_mapped_reads_1.bam
 samtools view -h tmp/2022-11-08-mapped_reads_2.bam | perl mapping_pipeline/filter_five_end.pl | samtools view -Sb -> tmp/2022-11-09-filtered_mapped_reads_2.bam
@@ -116,10 +121,50 @@ java -Xmx4G -Djava.io.tmpdir=temp/ -jar picard.jar AddOrReplaceReadGroups INPUT=
 ./yahs/yahs input/reference tmp/2022-11-09-combined_filtered_added_group.bam -o tmp/2022_11_09-ref-10-contigs
 
 (yahs/juicer pre tmp/2022_11_09-ref-10-contigs.bin tmp/2022_11_09-ref-10-contigs_scaffolds_final.agp input/reference.fai | sort -k2,2d -k6,6d -T ./ --parallel=8 -S32G | awk 'NF' > alignments_sorted.txt.part) && (mv alignments_sorted.txt.part tmp/2022-11-09-alignments_sorted_10_contigs.txt)
+
 cut -f 1,2 input/reference.fai > tmp_yahs/2022-11-09-scaffolds_final.chrom.sizes
+
 (java -jar -Xmx32G juicer_tools_1.22.01.jar pre tmp/2022-11-09-alignments_sorted_10_contigs.txt out.hic.part tmp/2022-11-04-scaffold.chrom.sizes) && (mv out.hic.part results/2022-11-09-HiC-contact-matrix-10-contigs.hic)
 
 
 ## Do it again without the bam filtering step.
 
-this is a test
+bwa mem -t 16 reference out_1.fq.gz out_2.fq.gz | samtools view -@ 16 -Sb -> ../tmp/2022-11-10-Raw_reads1and2.bam
+
+./yahs/yahs input/reference tmp/2022-11-10-Raw_reads1and2.bam -o tmp/2022_11_11-Raw_reads_10_Contigs
+
+(yahs/juicer pre tmp/2022_11_11-Raw_reads_10_Contigs.bin tmp/2022_11_11-Raw_reads_10_Contigs_scaffolds_final.agp input/reference.fai | sort -k2,2d -k6,6d -T ./ --parallel=8 -S32G | awk 'NF' > alignments_sorted.txt.part) && (mv alignments_sorted.txt.part tmp/2022-11-11-alignments_sorted_10_contigs_RAW.txt)
+
+{{{{samtools view -b -f 4 tmp/2022-11-10-Raw_reads1and2.bam > 2022_11_11_filtered-flag-4-raw-reads.bam}}}}
+
+
+#### ONe scaffold only
+seqtk seq -L 2000000 assembly.fasta.gz > 1_scaffold.fa
+
+samtools faidx reference
+
+bwa index -p reference reference
+
+bwa mem -t 16 reference out_1.fq.gz out_2.fq.gz | samtools view -@ 16 -Sb -> ../tmp/2022-11-14-Raw_reads_1scaffold.bam
+
+./yahs/yahs input/reference tmp/2022-11-14-Raw_reads_1scaffold.bam -o tmp/2022-11-14-Raw_reads_1_scaffold
+cut -f 1,2 input/reference.fai > tmp/2022-11-14-1scaffold
+
+(yahs/juicer pre tmp/2022-11-14-Raw_reads_1_scaffold.bin tmp/2022-11-14-Raw_reads_1_scaffold_scaffolds_final.agp input/reference.fai | sort -k2,2d -k6,6d -T ./ --parallel=8 -S32G | awk 'NF' > alignments_sorted.txt.part) && (mv alignments_sorted.txt.part tmp/2022-11-14-alig_sorted_1scaffold.txt)
+samtools view -@ 10 -bq 50 tmp/2022-11-10-Raw_reads1and2.bam  > 2022-11-14-Filter_mapq-50-10-contigs-raw-1and2.bam
+seqtk seq -L 750000 assembly.fasta.gz > 10_contigs.fa
+bwa index -p 10_contigs 10_contigs.fa
+./yahs/yahs input/10_contigs tmp/2022-11-14-Filter_mapq-50-10-contigs-raw-1and2.bam -o tmp/2022-11-15-Filter-raw_reads_10_contigs
+(yahs/juicer pre tmp/2022-11-15-Filter-raw_reads_10_contigs.bin tmp/2022-11-15-Filter-raw_reads_10_contigs_scaffolds_final.agp input/10_contigs.fai | sort -k2,2d -k6,6d -T ./ --parallel=8 -S32G | awk 'NF' > alignments_sorted.txt.part) && (mv alignments_sorted.txt.part tmp/2022-11-15-Alig_sorted_10contigs_mapq50.txt)
+cut -f 1,2 input/10_contigs.fai > tmp/2022-11-15-10Contigs.chrom.sizes
+samtools view -@ 16 -bq 40 tmp/2022-11-10-Raw_reads1and2.bam  > 2022-11-15-Filter_mapq-40-10-contigs-raw-1and2.ba
+./yahs/yahs input/10_contigs 2022-11-15-Filter_mapq-40-10-contigs-raw-1and2.bam -o tmp/2022-11-16-Filter40-raw_reads_10_contig
+(yahs/juicer pre tmp/2022-11-16-Filter40-raw_reads_10_contig.bin tmp/2022-11-16-Filter40-raw_reads_10_contig_scaffolds_final.agp input/10_contigs.fai | sort -k2,2d -k6,6d -T ./ --parallel=8 -S32G | awk 'NF' > alignments_sorted.txt.part) && (mv alignments_sorted.txt.part tmp/2022-11-16-Alig_sorted_10contigs_mapq40.txt)
+(java -jar -Xmx32G juicer_tools_1.22.01.jar pre tmp/2022-11-16-Alig_sorted_10contigs_mapq40.txt out.hic.part tmp/2022-11-15-10Contigs.chrom.sizes) && (mv out.hic.part results/2022-11-16-mapq40_10contigs.hic)
+seqtk seq -L 50000 assembly.fasta.gz > min50000.fa
+seqtk sample -s1 min50000.fa 15 > 50k_15contigs
+bwa index -p 50k_15contigs 50k_15contigs
+samtools faidx 50k_15contigs
+bwa index assembly.fasta.gz assembly.fasta.gz
+samtools faidx assembly.fasta 
+bwa mem -t 16 assembly.fasta out_1.fq.gz out_2.fq.gz | samtools view -@ 16 -Sb -> ../tmp/2022-11-21-Raw_reads_All.bam
